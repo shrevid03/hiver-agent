@@ -1,0 +1,82 @@
+[
+  {
+    "message": "My order was supposed to arrive yesterday and still nothing. Where is it?",
+    "intent": "delivery_not_received",
+    "intent_confidence": 0.98,
+    "reply": "So sorry your order hasn't arrived yet! We know how frustrating that is. Please DM us your order number so we can look into the tracking status and help get this sorted out for you. We're here to make it right. ^SJ",
+    "grounded_on": 3,
+    "escalation": "auto",
+    "escalation_reason": "This is a routine first-contact inquiry about a delayed order that can be addressed with standard tracking information or a help link.",
+    "escalation_method": "llm"
+  },
+  {
+    "message": "I want to return the broken headphones I received.",
+    "intent": "return_refund",
+    "intent_confidence": 0.95,
+    "reply": "So sorry your headphones arrived broken! You can view your specific return or replacement options by visiting the Returns page. If you run into any trouble, please DM us your order ID so we can help you out. ^SJ",
+    "grounded_on": 3,
+    "escalation": "auto",
+    "escalation_reason": "This is a routine return request for a defective item that can be handled via standard self-service return workflows.",
+    "escalation_method": "llm"
+  },
+  {
+    "message": "I have contacted Amazon 4 times about my refund and NOBODY has helped me!",
+    "intent": "return_refund",
+    "intent_confidence": 0.98,
+    "reply": "I\u2019m so sorry you\u2019ve had to reach out four times without a resolution. That is incredibly frustrating. I\u2019d love to step in and help sort this out for you. Please DM us your order number so we can look into the status of your refund right away. ^SJ",
+    "grounded_on": 3,
+    "escalation": "escalate",
+    "escalation_reason": "Rule-based: repeated_contact",
+    "escalation_method": "rules"
+  },
+  {
+    "message": "My account is locked. I cannot sign in at all.",
+    "intent": "account_access",
+    "intent_confidence": 0.98,
+    "reply": "I'm so sorry your account is locked! This is frustrating. Please check your email for a message from our account specialist team. If you don't see it, reply to this tweet with your email address, and we'll look into it via DM. ^SJ",
+    "grounded_on": 3,
+    "escalation": "escalate",
+    "escalation_reason": "The customer is experiencing a complete account lockout, which is a complex account issue requiring human intervention to restore access.",
+    "escalation_method": "llm"
+  },
+  {
+    "message": "Alexa won't connect to Spotify since the last update.",
+    "intent": "tech_issue",
+    "intent_confidence": 0.98,
+    "reply": "So sorry your Spotify connection dropped after the update! This can happen, but we can usually fix it by re-linking the account in the Alexa app. I\u2019d love to help you troubleshoot this in real-time. Please DM us your order details so we can get you back to your music! ^SJ",
+    "grounded_on": 3,
+    "escalation": "auto",
+    "escalation_reason": "Routine inquiry \u2014 auto-handle",
+    "escalation_method": "rules"
+  },
+  {
+    "message": "I was charged twice for the same order. Fix this NOW.",
+    "intent": "billing_payment",
+    "intent_confidence": 0.98,
+    "reply": "I'm so sorry for the stress of a double charge! We can't access account details here, but we can definitely help resolve this. Please DM us your order number and email so we can investigate and ensure you're only billed once. ^SJ",
+    "grounded_on": 3,
+    "escalation": "auto",
+    "escalation_reason": "This is a routine billing discrepancy regarding a duplicate charge that can typically be resolved through standard refund procedures or help links without requiring human escalation.",
+    "escalation_method": "llm"
+  },
+  {
+    "message": "Does Amazon deliver on Sundays?",
+    "intent": "other",
+    "intent_confidence": 0.95,
+    "reply": "Hi there! We do offer Sunday delivery for many Prime-eligible items. The best way to confirm is to check the estimated delivery date at checkout, as availability can vary by location and item. If you need help with a specific order, feel free to DM us the details. ^SJ",
+    "grounded_on": 3,
+    "escalation": "auto",
+    "escalation_reason": "This is a routine, first-contact question about delivery schedules that can be answered with a standard help link or static information.",
+    "escalation_method": "llm"
+  },
+  {
+    "message": "I pre-ordered a game and it hasn't shipped even though it came out 3 days ago.",
+    "intent": "order_status",
+    "intent_confidence": 0.95,
+    "reply": "So sorry for the wait! Pre-orders typically ship on or before the release date, but delays can happen. Please DM us your order number so we can check the status and help get that game to you. ^SJ",
+    "grounded_on": 3,
+    "escalation": "auto",
+    "escalation_reason": "Routine inquiry \u2014 auto-handle",
+    "escalation_method": "rules"
+  }
+]

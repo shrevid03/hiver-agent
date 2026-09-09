@@ -1,0 +1,109 @@
+[
+  {
+    "intent": "delivery_not_received",
+    "cluster_id": 9,
+    "pct": 13.3,
+    "definition": "Customer placed an order, the expected delivery date has passed, and the package has not arrived. Includes delayed shipments and missing parcels.",
+    "keywords": ["delivery", "delivered", "package", "delayed", "arrive", "shipped"],
+    "examples": [
+      "I placed an order on Wed for next day delivery and it didn't arrive.",
+      "My order is supposed to deliver by 31 Oct 2017 and still not received.",
+      "why my order is delayed? When is it going to be delivered?"
+    ]
+  },
+  {
+    "intent": "delivery_wrong_or_damaged",
+    "cluster_id": 4,
+    "pct": 8.7,
+    "definition": "Package was delivered to wrong address, left for the wrong recipient, or arrived damaged/in poor condition.",
+    "keywords": ["delivered", "wrong", "damaged", "door", "parcel", "box", "package"],
+    "examples": [
+      "They left me boxes for two different houses today.",
+      "This is how my package was delivered with important contents exposed.",
+      "Failed to deliver because I wasn't in despite putting several instructions."
+    ]
+  },
+  {
+    "intent": "return_refund",
+    "cluster_id": 3,
+    "pct": 13.9,
+    "definition": "Customer wants to return an item or is waiting for a refund. Includes refund not initiated, return pickup not done, and refund status checks.",
+    "keywords": ["refund", "return", "returned", "product", "order", "customer", "service"],
+    "examples": [
+      "Product pickup for refund yesterday but refund not initiated. Kindly assist.",
+      "I have raised a refund request for my order and no update.",
+      "I spoke on the phone yesterday and they said I would receive an email."
+    ]
+  },
+  {
+    "intent": "account_access",
+    "cluster_id": 1,
+    "pct": 6.8,
+    "definition": "Customer cannot access their Amazon account. Includes locked accounts, password/email issues, and account security concerns.",
+    "keywords": ["account", "locked", "email", "address", "login", "security", "card"],
+    "examples": [
+      "My account is locked because of my billing address. I sent my bank statement but no response.",
+      "Need assistance regarding account security. No response yet.",
+      "Tried to order and my account is locked again."
+    ]
+  },
+  {
+    "intent": "prime_complaint",
+    "cluster_id": 7,
+    "pct": 7.3,
+    "definition": "Customer is dissatisfied with Amazon Prime, specifically expecting faster delivery that Prime promises but not receiving it.",
+    "keywords": ["prime", "delivery", "day", "paying", "promised", "service"],
+    "examples": [
+      "My package was supposed to arrive today. Now not coming till Friday. Why do I pay for Prime?",
+      "I don't understand why Prime isn't shipping promptly anymore.",
+      "I buy an item on Prime which is meant to be next day delivery yet it won't be here for 3 days."
+    ]
+  },
+  {
+    "intent": "tech_issue",
+    "cluster_id": 10,
+    "pct": 11.1,
+    "definition": "Technical problems with Amazon products or services: Alexa/Echo not working, Amazon app crashing or down, website errors.",
+    "keywords": ["alexa", "echo", "app", "site", "error", "working", "down"],
+    "examples": [
+      "Is the Alexa App down? It's timing out here in London.",
+      "I am not able to access skills from US.",
+      "Your Watch Next List on is broken BIG TIME today."
+    ]
+  },
+  {
+    "intent": "order_status",
+    "cluster_id": 0,
+    "pct": 10.5,
+    "definition": "Customer asking about the status of their order, pre-order, or purchase. Includes tracking questions and order update requests.",
+    "keywords": ["order", "when", "price", "buy", "pre-order", "status", "tracking"],
+    "examples": [
+      "Items ordered on CyberMonday are already MIA. Not a great start.",
+      "Where's my order? Very poor customer experience on your Black Friday deals.",
+      "I put in a pre-order on July 15th and still waiting."
+    ]
+  },
+  {
+    "intent": "billing_payment",
+    "cluster_id": 5,
+    "pct": 7.4,
+    "definition": "Issues with payment, incorrect charges, AmazonPay problems, or billing disputes.",
+    "keywords": ["prime", "account", "pay", "service", "charge", "payment", "amazonpay"],
+    "examples": [
+      "Almost a month has passed but my refund still not processed.",
+      "Why would anyone want to use AmazonPay? Cannot trust due to billing issues.",
+      "Horrible customer experience from Amazon India. No tracking and no refund."
+    ]
+  },
+  {
+    "intent": "other",
+    "cluster_id": -1,
+    "pct": 21.0,
+    "definition": "Non-English messages, niche product-specific issues (e.g. game beta codes), or messages that do not fit any defined intent.",
+    "keywords": [],
+    "examples": [
+      "Non-English messages (Spanish, French, German, Portuguese)",
+      "I pre-ordered Star Wars Battlefront 2 and haven't received my beta code."
+    ]
+  }
+]

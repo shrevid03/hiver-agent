@@ -1,0 +1,24 @@
+# Environment
+.env
+venv/
+.venv/
+
+# Raw data (large, not needed in repo)
+data/raw/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# RAG store (regenerated on setup)
+data/processed/*.pkl
+
+# Corrupted eval results (don't commit bad data)
+data/processed/AmazonHelp_eval_results.json
+data/processed/AmazonHelp_eval_report.json
+
+# OS
+.DS_Store
+*.swp

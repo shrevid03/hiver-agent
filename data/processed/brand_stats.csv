@@ -1,0 +1,9 @@
+brand,total_replies,unique_threads_approx,dm_redirect_rate,avg_reply_chars
+AmazonHelp,169840,155445,0.001,124.0
+AppleSupport,106860,106696,0.305,137.0
+Uber_Support,56270,55283,0.268,110.0
+SpotifyCares,43265,41734,0.226,130.0
+Delta,42253,36215,0.074,104.0
+Tesco,38573,25315,0.114,139.0
+AmericanAir,36764,36524,0.077,103.0
+TMobileHelp,34317,33909,0.353,125.0
