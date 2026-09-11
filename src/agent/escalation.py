@@ -1,19 +1,16 @@
 """
 escalation.py — Decide whether to auto-handle or escalate to a human.
-High-precision hard rules first; the LLM decides everything else.
+High-precision hard rules first; the LLM decides the rest.
 Uses the shared provider-agnostic client with retry-and-backoff.
 """
 import json, time, random, re
 from src.agent.llm import make_client, DEFAULT_MODEL, RateLimitError, APIError
 
-# Hard signals — high precision, escalate immediately.
 HARD_ESCALATE_KEYWORDS = [
     "lawyer","attorney","sue","lawsuit","legal action","court","ftc",
     "bbb","better business bureau","identity theft","injury","injured",
     "dangerous","hazard",
 ]
-# Soft signals — emotional/emphasis cues that ALONE do not warrant a human.
-# Passed to the LLM as context instead of auto-escalating.
 SOFT_SIGNAL_KEYWORDS = [
     "fraud","scam","stolen","this is unacceptable","never again",
     "reported you","news channel","media","ridiculous","worst",
