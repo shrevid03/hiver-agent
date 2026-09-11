@@ -44,7 +44,7 @@ from src.agent.rag_store import RAGStore
 from src.agent.reply_drafter import ReplyDrafter
 
 # ── Groq client (for LLM judge) ──────────────────────────────────────────────
-from groq import Groq
+from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -124,8 +124,8 @@ def build_tfidf_baseline(threads_path: Path):
 # ── LLM Judge ────────────────────────────────────────────────────────────────
 
 class LLMJudge:
-    def __init__(self, model: str = "qwen/qwen3-27b"):
-        self.client = Groq(api_key=os.environ["GROQ_API_KEY"])
+    def __init__(self, model: str = "gemini-3.5-flash-lite"):
+        self.client = OpenAI(api_key=os.environ["GEMINI_API_KEY"], base_url="https://generativelanguage.googleapis.com/v1beta/openai/")
         self.model = model
 
     def score(self, message: str, reply: str, examples: list[dict]) -> dict:
