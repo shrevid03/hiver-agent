@@ -22,11 +22,11 @@ Focusing on one brand was a deliberate choice: a mixed-brand RAG store would gro
 
 The agent is four cooperating components behind a shared inference layer.
 
-**Intent classifier** (`src/agent/classifier.py`) — few-shot LLM classification into a 9-class taxonomy, returning structured JSON (`{intent, confidence}`) via the model's JSON mode. The taxonomy was derived by clustering the message corpus and manually naming the clusters, with an explicit `other` catch-all for non-English and out-of-scope messages. The prompt carries per-intent definitions plus a **disambiguation guide** with contrastive rules for the boundaries that confuse the model most (see §7).
+**Intent classifier** (`src/agent/classifier.py`) — few-shot LLM classification into a 9-class taxonomy, returning structured JSON (`{intent, confidence}`) via the model's JSON mode. The taxonomy was derived by clustering the message corpus and manually naming the clusters, with an explicit `other` catch-all for non-English and out-of-scope messages. (A disambiguation guide targeting the hardest boundaries was later tried and reverted — see §7.)
 
 **RAG store** (`src/agent/rag_store.py`) — sentence-transformer embeddings over the 8,000 historical threads, retrieved by cosine similarity with an *intent boost*: candidates matching the predicted intent are preferred, so a refund query retrieves past refund resolutions rather than superficially similar text. Persisted to disk (pickle) so it is built once.
 
-**Escalation decider** (`src/agent/escalation.py`) — a hybrid: cheap keyword rules catch the clear cases (legal threats, severe complaints, explicit "human" requests), and the LLM is consulted only for genuine edge cases. This keeps escalation mostly free and fast while still handling nuance.
+**Escalation decider** (`src/agent/escalation.py`) — a hybrid: high-precision keyword rules catch the clear cases (legal threats, safety, repeated contact), and the LLM decides the remaining edge cases through the shared retry-backed client.
 
 **Reply drafter** (`src/agent/reply_drafter.py`) — drafts a reply grounded in the retrieved historical resolutions, constrained to Twitter norms: ≤280 characters, warm but concise, no fabricated order details/refund amounts/timelines, and a polite move to DM when private details are needed.
 
@@ -67,14 +67,20 @@ Per-intent F1 (best to worst):
 
 ### Escalation
 
-| Metric | Value |
-|---|---|
-| Accuracy | 70.5% |
-| Precision | 0.640 |
-| Recall | 0.679 |
-| F1 | 0.659 |
+The initial full-eval escalation numbers (P=0.640, R=0.679, F1=0.659; TP=57, FP=32, FN=27, TN=84) were later traced to a **bug**, not genuine behaviour: the escalation decider was still calling the exhausted Groq endpoint while the rest of the pipeline ran on Gemini, and its error handler defaulted every failed call to "escalate" (see §8). So the 32 false positives were mostly force-escalations from a dead API, not the model over-flagging.
 
-Confusion: TP=57, FP=32, FN=27, TN=84. The decider is balanced — it neither wildly over-flags nor misses most true escalations.
+After migrating the decider to the working LLM layer with retry-and-backoff and rebalancing the rules (emotional/emphasis cues became LLM *context* rather than instant-escalate triggers), an isolated re-measurement (golden intent as input, to separate the decider from classifier errors) gave:
+
+| Metric | Before (buggy) | After (corrected decider) |
+|---|---|---|
+| Precision | 0.640 | **0.816** |
+| Recall | 0.679 | 0.369 |
+| F1 | 0.659 | 0.508 |
+| FP / FN | 32 / 27 | 7 / 53 |
+
+The correction eliminated the over-flagging (FP 32 → 7, precision 0.64 → 0.82) but exposed the real limit: the corrected decider is now conservative and *under*-escalates (recall 0.37). Multiple prompt rebalances (across two model backends) failed to lift recall past ~0.37, which points to a structural cause rather than a wording problem.
+
+**Root cause — a definition/threshold mismatch.** The golden set labels **84 of 200 cases (42%) as "should escalate"** — a deliberately liberal threshold reflecting the annotator's policy. A general-purpose LLM asked "does this genuinely need a human?" escalates only the ~16% of clearly hard cases. That 42%-vs-16% gap cannot be closed by prompt wording, because the model has no way to infer one annotator's specific escalation threshold; closing it would require encoding the exact escalation rubric or fitting a decision threshold on labeled data (and hand-tuning to these 200 labels would simply be overfitting). This is the same lesson as the intent ceiling (§7): the metric is bounded by label definition, not model capability. The honest, defensible position is therefore a high-precision decider (0.82) plus explicit future work on recall calibration (§12), with the caveat that the "right" operating point is ultimately a business decision — in support, a missed escalation usually costs more than an unnecessary one.
 
 ### Reply quality (LLM judge, n=40, scale 1–3)
 
@@ -83,7 +89,7 @@ Confusion: TP=57, FP=32, FN=27, TN=84. The decider is balanced — it neither wi
 | Groundedness | 2.93 | 2.26 | 2.71 |
 | Tone | 2.93 | 1.81 | 1.71 |
 | Completeness | 2.97 | 1.93 | 2.18 |
-| Actionability | 2.97 | 1.73* | 2.54 |
+| Actionability | 2.97 | 2.11 | 2.54 |
 | **Average** | **2.95** | **2.03** | **2.29** |
 
 The agent wins on every dimension and by a wide margin overall (2.95 vs 2.03 and 2.29). This is the strongest evidence in the evaluation that RAG-grounded drafting does real work — the retrieved historical resolutions produce replies that are more grounded, warmer, and more actionable than either baseline.
@@ -120,11 +126,15 @@ The root cause in each case is semantic overlap in the intent definitions: "deli
 
 ## 8. Reliability findings (engineering)
 
-Two non-obvious reliability issues surfaced during evaluation and are worth calling out, because both materially affected the validity of the numbers:
+Three non-obvious reliability issues surfaced during evaluation, and each materially affected the validity of the numbers:
 
 1. **Silent rate-limit contamination.** The original classifier wrapped its API call in a broad `except` that returned `"other"` on *any* error. Under free-tier rate limiting, every throttled call was therefore scored as a *wrong prediction* rather than a transient failure — accuracy on one run collapsed to ~11% purely from throttling, not model behaviour. The fix was retry-with-backoff that honours the server's `Retry-After` and only falls back after genuine exhaustion. Without this, the eval was measuring the rate limiter, not the model.
 
 2. **Thinking-model token budget.** Gemini 2.5/3.5 models spend output tokens reasoning internally before emitting the answer. A `max_tokens=64` cap (fine for the non-thinking Groq model) truncated the JSON mid-string and every classification failed to parse. Raising the cap to 512 fixed it.
+
+3. **The same silent-fallback bug in a second component.** The escalation decider had not been migrated off Groq, so during the Gemini eval its every LLM call hit the exhausted Groq quota and its `except` defaulted to "escalate" — silently inflating false positives (see §5). This is the same failure pattern as (1) in a different place, and it is why a broad `except: return <default>` is dangerous in an evaluated pipeline: a transient infra failure masquerades as a model decision. The fix was the same — route through the shared retry-backed client and make the hard-failure fallback conservative rather than blanket-escalate.
+
+A further quota gotcha worth recording: on the free tier, `gemini-2.5-flash` allows only **20 requests/day**, versus 500/day for `gemini-3.5-flash-lite` — so model selection had to account for per-model daily caps, not just capability.
 
 The provider-agnostic LLM layer (§3) is what made the Groq→Gemini migration a minutes-long change rather than a rewrite across four files.
 
@@ -155,26 +165,23 @@ The *same* architecture, aimed at a completely different 77-intent domain with n
 11. **Provider-agnostic LLM layer** — enabled the Groq→Gemini migration as a one-line change.
 12. **Retry-with-backoff** — after discovering rate-limit errors were being silently scored as wrong predictions (see §8).
 13. **`max_tokens=512` for thinking models** — reasoning tokens were truncating JSON output.
-14. **Error-driven prompt refinement** — a disambiguation guide targeting the measured top confusion pairs, using synthetic (non-leaking) examples.
+14. **Error-driven prompt refinement** — a disambiguation guide targeting the measured top confusion pairs, using synthetic (non-leaking) examples (attempted, then reverted — see §7).
 15. **`temperature=0`** — deterministic, reproducible classification.
 
 ## 11. Limitations
 
 - **prime_complaint (F1 0.62)** is the weakest intent — it genuinely overlaps with both billing and delivery, and some golden labels are arguably ambiguous (a late Prime order is defensibly *both* prime_complaint and delivery_not_received).
-- **Escalation is precision-limited** (0.64) — it over-flags some non-escalation cases.
+- **Escalation is not yet at a good operating point.** After fixing the dead-API bug, the corrected decider is precise (0.82) but under-escalates (recall 0.37), bounded by the label-threshold mismatch in §5. Recall calibration is the clearest remaining improvement.
 - **Judge self-preference risk** — the judge is a Gemini model scoring Gemini-generated replies, so the absolute judge scores may be biased upward; they are most trustworthy *relative to the baselines*, which is how they are presented.
 - **Single-annotator golden set** — labelled by one person, so there is unmeasured label noise and no inter-annotator agreement.
-- **Banking77 incomplete** — n=20 checkpoint only.
+- **Banking77 sample size** — evaluated on a 2-per-intent stratified sample (n=154), not the full 3,080-example test split.
 - **Free-tier rate limits** constrained how fast the evaluation loop could iterate.
 
 ## 12. Future work
 
 - Fine-tune a small dedicated classifier on the labelled data for lower cost and latency at inference time.
+- **Tune escalation toward recall** — the corrected decider is too conservative (R=0.37); a decision threshold fit on labeled data, or the explicit escalation rubric encoded, should recover recall while keeping most of the precision gain.
 - Confidence-thresholded human handoff — route low-confidence classifications to a human instead of guessing.
 - Multi-annotator golden set with inter-annotator agreement to quantify label noise.
-- Complete the full Banking77 run and add a per-intent breakdown.
+- Complete the full Banking77 test split and add a per-intent breakdown.
 - Async / batched inference to raise throughput within rate limits.
-
----
-
-\* The TF-IDF actionability figure printed identically to the agent's on one run and is reported here as ~1.7–2.1 across runs; treat the TF-IDF baseline as clearly below the agent on all four dimensions.
